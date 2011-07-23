@@ -86,7 +86,7 @@ public class GoogleContactsServlet extends HttpServlet
         service.signRequest(accessToken, oauthrequest);
         oauthrequest.addHeader("GData-Version", "3.0");
         Response oauthresponse = oauthrequest.send();
-        System.out.println("Got it!  Sending it through to the http response");
+        System.out.println("Got it!  Sending it through to the http response...");
 
         /*
          * TODO handle error conditions

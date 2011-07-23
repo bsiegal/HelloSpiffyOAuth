@@ -72,7 +72,7 @@ public class AuthGoogle extends HttpServlet
         System.out.println("(if your curious it looks like this: " + requestToken + " )");
         System.out.println();
 
-        System.out.println("Now go and authorize Scribe here:");
+        System.out.println("Authorizing Scribe by redirecting with callback to:");
         System.out.println(AUTHORIZE_URL + requestToken.getToken());
         
         /*

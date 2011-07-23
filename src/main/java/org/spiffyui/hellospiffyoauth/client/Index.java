@@ -15,23 +15,17 @@
  ******************************************************************************/
 package org.spiffyui.hellospiffyoauth.client;
 
-import org.spiffyui.client.JSONUtil;
-import org.spiffyui.client.JSUtil;
 import org.spiffyui.client.MainFooter;
 import org.spiffyui.client.MainHeader;
 import org.spiffyui.client.MessageUtil;
-import org.spiffyui.client.rest.RESTCallback;
 import org.spiffyui.client.rest.RESTException;
-import org.spiffyui.client.rest.RESTility;
+import org.spiffyui.client.rest.RESTObjectCallBack;
 import org.spiffyui.client.widgets.LongMessage;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.json.client.JSONArray;
-import com.google.gwt.json.client.JSONObject;
-import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.HTMLPanel;
@@ -43,6 +37,9 @@ import com.google.gwt.user.client.ui.RootPanel;
  */
  public class Index implements EntryPoint
  {
+     public static final String OAUTH_VERIFIER = "oauth_verifier";
+     public static final String OAUTH_TOKEN = "oauth_token";
+     
      private static final SpiffyUiHtml STRINGS = (SpiffyUiHtml) GWT.create(SpiffyUiHtml.class);
 
      private static Index g_index;
@@ -132,66 +129,57 @@ import com.google.gwt.user.client.ui.RootPanel;
 
      private void getContacts()
      {
-         /*
-          * Use the URL parameters from the google callback as parameters to the REST service.
-          */
-         RESTility.callREST("./contacts?oauth_verifier=" + Window.Location.getParameter("oauth_verifier") +
-             "&oauth_token=" + Window.Location.getParameter("oauth_token"), new RESTCallback() {
+         String oauthVerifier = Window.Location.getParameter(OAUTH_VERIFIER);
+         String oauthToken = Window.Location.getParameter(OAUTH_TOKEN);
+         
+         Contacts.loadContacts(oauthVerifier, oauthToken, new RESTObjectCallBack<Contacts>() {
             
             @Override
-            public void onSuccess(JSONValue val)
+            public void success(Contacts o)
             {
-                StringBuffer html = new StringBuffer();
-                JSONObject resp = val.isObject();
-                JSONObject feed = JSONUtil.getJSONObject(resp, "feed");
-                String feedTitle = JSONUtil.getStringValue(feed, "title");
-
-                html.append(feedTitle).append("<br/><br/>");
-                
-                JSONArray entries = JSONUtil.getJSONArray(feed, "entry");
-                for (int i = 0, len = entries.size(); i < len; i++) {
-                    JSONObject entry = entries.get(i).isObject();
-                    JSONObject title = JSONUtil.getJSONObject(entry, "title");
-                    String entryTitle = JSONUtil.getStringValue(title, "$t");
-                
-                    html.append(entryTitle).append("<br/");
-
-                    JSONArray emails = JSONUtil.getJSONArray(entry, "gd$email");
-                    if (emails != null) {
-                        for (int j = 0, size = emails.size(); j < size; j++) {
-                            JSONObject email = emails.get(j).isObject();
-                            String address = JSONUtil.getStringValue(email, "address");
-                    
-                            html.append(address).append("<br/>");
-                        }
-                        html.append("<br/></br/>");
-                    }
-                }
-                MessageUtil.showMessage(html.toString());
+                showContacts(o);
             }
             
             @Override
-            public void onError(int statusCode, String errorResponse)
-            {
-                MessageUtil.showError(errorResponse);
-            }
-            
-            @Override
-            public void onError(RESTException e)
+            public void error(RESTException e)
             {
                 MessageUtil.showError(e.getReason());
             }
+            
+            @Override
+            public void error(String message)
+            {
+                MessageUtil.showError(message);
+            }
         });
      }
-     /**
+     
+    private void showContacts(Contacts contacts)
+    {
+        StringBuffer html = new StringBuffer();
+        for (Contact c : contacts.getContacts()) {
+            html.append("<br/><b>").append(c.getTitle()).append("</b>").append(":<br/>");
+            for (Email e : c.getEmails()) {
+                if (e.isPrimary()) {
+                    html.append("<b>").append(e.getAddress()).append("</b>");
+                } else {
+                    html.append(e.getAddress());
+                }
+                html.append("<br/>");
+            }
+        }
+        MessageUtil.showMessage(html.toString());
+    }
+
+
+    /**
       * returns whether the  user is logged in or not
       * @return true if the user is logged in (browser cookie is there)
       */
      private static boolean userLoggedIn()
      {         
-        //oauth_verifier=gNH2uiZIkSE4HEfCzHu_RA5E&oauth_token=4%2FCHiSIT-o93SjVaiRjQ83JtiprLTH
-         String oauthVerifier = Window.Location.getParameter("oauth_verifier");
-         String oauthToken = Window.Location.getParameter("oauth_token");
+         String oauthVerifier = Window.Location.getParameter(OAUTH_VERIFIER);
+         String oauthToken = Window.Location.getParameter(OAUTH_TOKEN);
                   
          return oauthVerifier != null && !oauthVerifier.trim().equals("") && oauthToken != null && !oauthToken.trim().equals("") ;
      }
