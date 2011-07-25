@@ -48,7 +48,7 @@ public class GoogleContactsServlet extends HttpServlet
     private static final String OAUTH_TOKEN = "oauth_token";
     
     //Google Contacts
-    private static final String PROTECTED_RESOURCE_URL = "https://www.google.com/m8/feeds/contacts/default/full?alt=json";
+    private static final String PROTECTED_RESOURCE_URL = "https://www.google.com/m8/feeds/contacts/default/full?alt=json&max-results=1000";
 
     private static final long serialVersionUID = -1L;
     
@@ -59,43 +59,73 @@ public class GoogleContactsServlet extends HttpServlet
     {
         String oauthVerifier = request.getParameter(OAUTH_VERIFIER);
         String oauthToken = request.getParameter(OAUTH_TOKEN);
-        /*
-         * Note the oauthToken is the token part of the request token
-         * and was used as the unique ID for the TokenManager in AuthGoogle.
-         */
-        
-        OAuthService service = TokenManager.getService(oauthToken);
-        
-        Verifier verifier = new Verifier(oauthVerifier);
-        
-        // Trade the Request Token and Verifier for the Access Token
-        System.out.println("Trading the Request Token for an Access Token...");
-        Token accessToken = TokenManager.getAccessToken(oauthToken);
-        if (accessToken == null) {
-            Token requestToken = TokenManager.getRequestToken(oauthToken);        
-            accessToken = service.getAccessToken(requestToken, verifier);
-            TokenManager.putAccessToken(oauthToken, accessToken);
-        }
-        System.out.println("Got the Access Token!");
-        System.out.println("(if your curious it looks like this: " + accessToken + " )");
-        System.out.println();
 
-        // Now let's go and ask for a protected resource!
-        System.out.println("Now we're going to access a protected resource...");
-        OAuthRequest oauthrequest = new OAuthRequest(Verb.GET, PROTECTED_RESOURCE_URL);
-        service.signRequest(accessToken, oauthrequest);
-        oauthrequest.addHeader("GData-Version", "3.0");
-        Response oauthresponse = oauthrequest.send();
-        System.out.println("Got it!  Sending it through to the http response...");
-
-        /*
-         * TODO handle error conditions
-         */
-        response.setStatus(oauthresponse.getCode());
         response.setContentType("application/json");
         ServletOutputStream out = response.getOutputStream();
-        out.println(oauthresponse.getBody());
-        out.close();
+
+        try {
+            if (oauthVerifier == null || oauthToken == null || oauthVerifier.trim().length() == 0 || oauthToken.trim().length() == 0) {
+                throw new Exception("No verifier or token found.");
+            }
+            
+            /*
+             * Note the oauthToken is the token part of the request token
+             * and was used as the unique ID for the TokenManager in AuthGoogle.
+             */
+            
+            OAuthService service = TokenManager.getService(oauthToken);
+            
+            Verifier verifier = new Verifier(oauthVerifier);
+            
+            // Trade the Request Token and Verifier for the Access Token
+            System.out.println("Trading the Request Token for an Access Token...");
+            Token accessToken = TokenManager.getAccessToken(oauthToken);
+            if (accessToken == null) {
+                Token requestToken = TokenManager.getRequestToken(oauthToken);        
+                accessToken = service.getAccessToken(requestToken, verifier);
+                TokenManager.putAccessToken(oauthToken, accessToken);
+            }
+            System.out.println("Got the Access Token!");
+            System.out.println("(if your curious it looks like this: " + accessToken + " )");
+            System.out.println();
+    
+            // Now let's go and ask for a protected resource!
+            System.out.println("Now we're going to access a protected resource...");
+            OAuthRequest oauthrequest = new OAuthRequest(Verb.GET, PROTECTED_RESOURCE_URL);
+            service.signRequest(accessToken, oauthrequest);
+            oauthrequest.addHeader("GData-Version", "3.0");
+            Response oauthresponse = oauthrequest.send();
+            System.out.println("Got it!  Sending it through to the http response...");
+    
+            response.setStatus(oauthresponse.getCode());
+            out.println(oauthresponse.getBody());
+            
+        } catch (Exception e) {
+            /**
+             * Catch all exceptions and make them a 400
+             */
+            response.setStatus(400);
+            out.println(generateFault("Sender", e.getClass().getCanonicalName(), 
+                e != null && e.getMessage() != null ? 
+                    e.getLocalizedMessage().replaceAll("\n", "") : 
+                        "No message available"));
+            
+        } finally {        
+            out.close();
+        }
     }
 
+    private String generateFault(String code, String subcode, String reason)
+    {
+        StringBuffer buff = new StringBuffer();
+
+        buff.append("{\"Fault\":{\"Code\":{\"Value\":\"").
+                append(code).
+                append("\",\"Subcode\":{\"Value\":\"").
+                append(subcode).
+                append("\"}},\"Reason\":{\"Text\":\"").
+                append(reason).
+                append("\"}}}");
+        return buff.toString();
+    }
 }

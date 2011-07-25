@@ -43,7 +43,6 @@ import com.google.gwt.user.client.ui.RootPanel;
      private static final SpiffyUiHtml STRINGS = (SpiffyUiHtml) GWT.create(SpiffyUiHtml.class);
 
      private static Index g_index;
-     private LongMessage m_longMessage = new LongMessage("longMsgPanel");
      private Button m_accessButton = new Button("1. Request access from Google");
      private Button m_contactsButton = new Button("2. Get contacts");
      
@@ -71,19 +70,13 @@ import com.google.gwt.user.client.ui.RootPanel;
          MainFooter footer = new MainFooter();
          footer.setFooterString("HelloSpiffyOAuth was built with the <a href=\"http://www.spiffyui.org\">Spiffy UI Framework</a>");
 
-         /*
-            This HTMLPanel holds most of our content.
-            MainPanel_html was built in the HTMLProps task from MainPanel.html, which allows you to use large passages of html
-            without having to string escape them.
-          */
          HTMLPanel panel = new HTMLPanel(STRINGS.MainPanel_html());
 
          RootPanel.get("mainContent").add(panel);
 
          /*
-            These dynamic controls add interactivity to our page.
+            Add the auth and contact buttons
           */
-         panel.add(m_longMessage, "longMsg");
          
          panel.add(m_accessButton, "AuthButton");
          m_accessButton.addClickHandler(new ClickHandler() {
@@ -108,9 +101,11 @@ import com.google.gwt.user.client.ui.RootPanel;
         if (!Index.userLoggedIn()) {
             header.setWelcomeString("");            
             m_accessButton.setFocus(true);
+            m_contactsButton.setEnabled(false);
         } else {
             header.setWelcomeString("You are logged in!");
-            m_contactsButton.setFocus(true);
+            m_contactsButton.setEnabled(true);
+            m_contactsButton.setFocus(true);            
         }
 
      }
@@ -153,6 +148,9 @@ import com.google.gwt.user.client.ui.RootPanel;
     private void showContacts(Contacts contacts)
     {
         RootPanel rootPanel = RootPanel.get("Contacts");
+        //first clear it, then fill it
+        rootPanel.clear();
+        
         for (Contact c : contacts.getContacts()) {
             StringBuffer html = new StringBuffer();
             html.append("<div class=\"contactName\">").append(c.getTitle()).append("</div>");
