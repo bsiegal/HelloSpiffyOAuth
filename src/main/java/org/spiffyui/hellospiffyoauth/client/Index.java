@@ -120,7 +120,7 @@ import com.google.gwt.user.client.ui.RootPanel;
       */
      private void requestAccess()
      {
-         Window.Location.replace("./authgoogle");
+         Window.Location.replace("/authgoogle");
      }
 
      private void getContacts()
