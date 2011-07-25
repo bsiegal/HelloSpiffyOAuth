@@ -22,7 +22,19 @@ h2 {
 }
 
 li {
-    list-style: disc inside none;
+    list-style: none inside none;
+}
+
+.contactName {
+    font-weight: bold;
+}
+
+.email.primary {
+    font-weight: bold;
+}
+
+.email {
+    font-size: small;
 }
 
 .spiffy-longmessage-panel {

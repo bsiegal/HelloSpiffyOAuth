@@ -44,8 +44,8 @@ import com.google.gwt.user.client.ui.RootPanel;
 
      private static Index g_index;
      private LongMessage m_longMessage = new LongMessage("longMsgPanel");
-     private Button m_accessButton = new Button("Request access from Google");
-     private Button m_contactsButton = new Button("Get contacts");
+     private Button m_accessButton = new Button("1. Request access from Google");
+     private Button m_contactsButton = new Button("2. Get contacts");
      
      /**
       * The Index page constructor
@@ -65,11 +65,6 @@ import com.google.gwt.user.client.ui.RootPanel;
           */
          final MainHeader header = new MainHeader();
          header.setHeaderTitle("Hello Spiffy OAuth!");
-         if (!Index.userLoggedIn()) {
-             header.setWelcomeString("");            
-         } else {
-             header.setWelcomeString("You are logged in!");
-         }
          /*
             The main footer shows our message at the bottom of the page.
           */
@@ -81,15 +76,7 @@ import com.google.gwt.user.client.ui.RootPanel;
             MainPanel_html was built in the HTMLProps task from MainPanel.html, which allows you to use large passages of html
             without having to string escape them.
           */
-         HTMLPanel panel = new HTMLPanel(STRINGS.MainPanel_html())
-         {
-             @Override
-             public void onLoad()
-             {
-                 super.onLoad();
-                 m_accessButton.setFocus(true);
-             }
-         };
+         HTMLPanel panel = new HTMLPanel(STRINGS.MainPanel_html());
 
          RootPanel.get("mainContent").add(panel);
 
@@ -98,7 +85,7 @@ import com.google.gwt.user.client.ui.RootPanel;
           */
          panel.add(m_longMessage, "longMsg");
          
-         panel.add(m_accessButton, "submitButton");
+         panel.add(m_accessButton, "AuthButton");
          m_accessButton.addClickHandler(new ClickHandler() {
             
             @Override
@@ -108,7 +95,7 @@ import com.google.gwt.user.client.ui.RootPanel;
             }
         });
 
-        panel.add(m_contactsButton, "submitButton");
+        panel.add(m_contactsButton, "GetButton");
         m_contactsButton.addClickHandler(new ClickHandler() {
             
             @Override
@@ -117,6 +104,15 @@ import com.google.gwt.user.client.ui.RootPanel;
                 getContacts();
             }
         });
+        
+        if (!Index.userLoggedIn()) {
+            header.setWelcomeString("");            
+            m_accessButton.setFocus(true);
+        } else {
+            header.setWelcomeString("You are logged in!");
+            m_contactsButton.setFocus(true);
+        }
+
      }
 
      /**
@@ -156,19 +152,21 @@ import com.google.gwt.user.client.ui.RootPanel;
      
     private void showContacts(Contacts contacts)
     {
-        StringBuffer html = new StringBuffer();
+        RootPanel rootPanel = RootPanel.get("Contacts");
         for (Contact c : contacts.getContacts()) {
-            html.append("<br/><b>").append(c.getTitle()).append("</b>").append(":<br/>");
+            StringBuffer html = new StringBuffer();
+            html.append("<div class=\"contactName\">").append(c.getTitle()).append("</div>");
             for (Email e : c.getEmails()) {
                 if (e.isPrimary()) {
-                    html.append("<b>").append(e.getAddress()).append("</b>");
+                    html.append("<div class=\"email primary\">").append(e.getAddress()).append("</div>");
                 } else {
-                    html.append(e.getAddress());
+                    html.append("<div class=\"email\">").append(e.getAddress()).append("</div>");
                 }
-                html.append("<br/>");
             }
+            
+            rootPanel.add(new ContactLi(html.toString()));
         }
-        MessageUtil.showMessage(html.toString());
+        
     }
 
 
@@ -184,4 +182,16 @@ import com.google.gwt.user.client.ui.RootPanel;
          return oauthVerifier != null && !oauthVerifier.trim().equals("") && oauthToken != null && !oauthToken.trim().equals("") ;
      }
 
+     /**
+      * A Contact list item to add to the "contacts" UL tag within MainPanel.html
+      */
+     private class ContactLi extends HTMLPanel
+     {
+
+        public ContactLi(String html)
+        {
+            super("li", html);
+        }
+         
+     }
  }
