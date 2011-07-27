@@ -20,12 +20,13 @@ import org.spiffyui.client.MainHeader;
 import org.spiffyui.client.MessageUtil;
 import org.spiffyui.client.rest.RESTException;
 import org.spiffyui.client.rest.RESTObjectCallBack;
-import org.spiffyui.client.widgets.LongMessage;
+import org.spiffyui.client.widgets.button.SimpleButton;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.user.client.Cookies;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.HTMLPanel;
@@ -44,7 +45,7 @@ import com.google.gwt.user.client.ui.RootPanel;
 
      private static Index g_index;
      private Button m_accessButton = new Button("1. Request access from Google");
-     private Button m_contactsButton = new Button("2. Get contacts");
+     private SimpleButton m_contactsButton = new SimpleButton("2. Get contacts");
      
      /**
       * The Index page constructor
@@ -98,7 +99,7 @@ import com.google.gwt.user.client.ui.RootPanel;
             }
         });
         
-        if (!Index.userLoggedIn()) {
+        if (!userLoggedIn()) {
             header.setWelcomeString("");            
             m_accessButton.setFocus(true);
             m_contactsButton.setEnabled(false);
@@ -120,8 +121,26 @@ import com.google.gwt.user.client.ui.RootPanel;
 
      private void getContacts()
      {
+         m_contactsButton.setInProgress(true);
+         RootPanel.get("Contacts").clear();
+         
+         /*
+          * Use the url params or the cookie for the verifier and token,
+          * if none found then throw an exception
+          */
          String oauthVerifier = Window.Location.getParameter(OAUTH_VERIFIER);
          String oauthToken = Window.Location.getParameter(OAUTH_TOKEN);
+         
+         if (isEmpty(oauthVerifier)) {
+             oauthVerifier = Cookies.getCookie(OAUTH_VERIFIER);
+         }
+         if (isEmpty(oauthToken)) {
+             oauthToken = Cookies.getCookie(OAUTH_TOKEN);
+         }
+         
+         if (isEmpty(oauthVerifier) && isEmpty(oauthToken)) {
+             throw new RuntimeException("No verifier or token were found.");
+         }
          
          Contacts.loadContacts(oauthVerifier, oauthToken, new RESTObjectCallBack<Contacts>() {
             
@@ -129,18 +148,21 @@ import com.google.gwt.user.client.ui.RootPanel;
             public void success(Contacts o)
             {
                 showContacts(o);
+                m_contactsButton.setInProgress(false);
             }
             
             @Override
             public void error(RESTException e)
             {
                 MessageUtil.showError(e.getReason());
+                m_contactsButton.setInProgress(false);
             }
             
             @Override
             public void error(String message)
             {
                 MessageUtil.showError(message);
+                m_contactsButton.setInProgress(false);
             }
         });
      }
@@ -148,9 +170,7 @@ import com.google.gwt.user.client.ui.RootPanel;
     private void showContacts(Contacts contacts)
     {
         RootPanel rootPanel = RootPanel.get("Contacts");
-        //first clear it, then fill it
-        rootPanel.clear();
-        
+
         for (Contact c : contacts.getContacts()) {
             StringBuffer html = new StringBuffer();
             html.append("<div class=\"contactName\">").append(c.getTitle()).append("</div>");
@@ -172,12 +192,32 @@ import com.google.gwt.user.client.ui.RootPanel;
       * returns whether the  user is logged in or not
       * @return true if the user is logged in (browser cookie is there)
       */
-     private static boolean userLoggedIn()
+     private boolean userLoggedIn()
      {         
          String oauthVerifier = Window.Location.getParameter(OAUTH_VERIFIER);
          String oauthToken = Window.Location.getParameter(OAUTH_TOKEN);
-                  
-         return oauthVerifier != null && !oauthVerifier.trim().equals("") && oauthToken != null && !oauthToken.trim().equals("") ;
+         
+         boolean urlParams = !isEmpty(oauthVerifier) && !isEmpty(oauthToken);
+         if (urlParams) {
+             /*
+              * If there are url params, set them in the cookie so if the browser is refreshed, we can use them again.
+              */
+             Cookies.setCookie(OAUTH_TOKEN, oauthToken);
+             Cookies.setCookie(OAUTH_VERIFIER, oauthVerifier);
+             return true;
+         }
+         
+         /*
+          * If there were no url params, check the cookie.
+          */
+         String tokenCookie = Cookies.getCookie(OAUTH_TOKEN);
+         String verifCookie = Cookies.getCookie(OAUTH_VERIFIER);
+         return !isEmpty(tokenCookie) && !isEmpty(verifCookie);
+     }
+     
+     private static boolean isEmpty(String s)
+     {
+         return s == null || s.trim().length() == 0;
      }
 
      /**

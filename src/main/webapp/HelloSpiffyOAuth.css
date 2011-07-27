@@ -40,3 +40,7 @@ li {
 .spiffy-longmessage-panel {
     margin-bottom: 1em;
 }
+
+button.spiffy-inprogress {
+    width: 142px;
+}
