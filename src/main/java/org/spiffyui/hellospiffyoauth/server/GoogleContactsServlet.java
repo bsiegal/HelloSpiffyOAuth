@@ -48,7 +48,7 @@ public class GoogleContactsServlet extends HttpServlet
     private static final String OAUTH_TOKEN = "oauth_token";
     
     //Google Contacts
-    private static final String PROTECTED_RESOURCE_URL = "https://www.google.com/m8/feeds/contacts/default/full?alt=json&max-results=1000";
+    private static final String PROTECTED_RESOURCE_URL = "https://www.google.com/m8/feeds/contacts/default/full?alt=json&max-results=200";
 
     private static final long serialVersionUID = -1L;
     
@@ -65,7 +65,7 @@ public class GoogleContactsServlet extends HttpServlet
 
         try {
             if (oauthVerifier == null || oauthToken == null || oauthVerifier.trim().length() == 0 || oauthToken.trim().length() == 0) {
-                throw new Exception("No verifier or token found.");
+                throw new RuntimeException("No verifier or token found.");
             }
             
             /*
@@ -74,6 +74,9 @@ public class GoogleContactsServlet extends HttpServlet
              */
             
             OAuthService service = TokenManager.getService(oauthToken);
+            if (service == null) {
+                throw new RuntimeException("Service does not exist. Request access again.");
+            }
             
             Verifier verifier = new Verifier(oauthVerifier);
             

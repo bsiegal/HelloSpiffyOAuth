@@ -83,8 +83,6 @@ public class AuthGoogle extends HttpServlet
         TokenManager.putService(requestToken.getToken(), service);
         TokenManager.putRequestToken(requestToken.getToken(), requestToken);
 
-//        Cookie cookie = new Cookie("requestToken", requestToken.getToken());
-//        response.addCookie(cookie);
         response.sendRedirect(AUTHORIZE_URL + requestToken.getToken());
         
     }

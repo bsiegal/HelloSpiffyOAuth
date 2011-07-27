@@ -104,7 +104,7 @@ import com.google.gwt.user.client.ui.RootPanel;
             m_accessButton.setFocus(true);
             m_contactsButton.setEnabled(false);
         } else {
-            header.setWelcomeString("You are logged in!");
+            header.setWelcomeString("You have a token!");
             m_contactsButton.setEnabled(true);
             m_contactsButton.setFocus(true);            
         }

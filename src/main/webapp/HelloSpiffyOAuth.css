@@ -39,8 +39,12 @@ li {
 
 .spiffy-longmessage-panel {
     margin-bottom: 1em;
+    margin-top: 2em;
+    cursor: default;
+    line-height: inherit;
 }
 
 button.spiffy-inprogress {
     width: 142px;
 }
+
